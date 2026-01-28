@@ -14,6 +14,10 @@ const STORAGE_KEYS = {
   workDuration: 'pomodoro_work_duration',
   breakTime: 'pomodoro_break_time',
   timerStyle: 'pomodoro_timer_style',
+  soundEnabled: 'pomodoro_sound_enabled',
+  soundPreset: 'pomodoro_sound_preset',
+  soundVolume: 'pomodoro_sound_volume',
+  desktopNotifications: 'pomodoro_desktop_notifications',
 };
 
 const getInitialTheme = () => {
@@ -45,11 +49,42 @@ const getInitialTimerStyle = () => {
   return stored === 'pill' || stored === 'minimal' ? stored : 'circle';
 };
 
+const getInitialSoundEnabled = () => {
+  if (typeof window === 'undefined') return true;
+  const stored = window.localStorage.getItem(STORAGE_KEYS.soundEnabled);
+  return stored === 'false' ? false : true;
+};
+
+const getInitialSoundPreset = () => {
+  if (typeof window === 'undefined') return 'chime';
+  const stored = window.localStorage.getItem(STORAGE_KEYS.soundPreset);
+  return stored === 'bell' || stored === 'digital' ? stored : 'chime';
+};
+
+const getInitialSoundVolume = () => {
+  if (typeof window === 'undefined') return 0.6;
+  const stored = window.localStorage.getItem(STORAGE_KEYS.soundVolume);
+  const value = parseFloat(stored || '');
+  return Number.isFinite(value) && value >= 0 && value <= 1 ? value : 0.6;
+};
+
+const getInitialDesktopNotifications = () => {
+  if (typeof window === 'undefined') return false;
+  const stored = window.localStorage.getItem(STORAGE_KEYS.desktopNotifications);
+  return stored === 'true';
+};
+
 const Pomodoro = () => {
   const [darkMode, setDarkMode] = useState(getInitialTheme);
   const [workDuration, setWorkDuration] = useState(getInitialWorkDuration); // in minutes
   const [breakTime, setBreakTime] = useState(getInitialBreakTime);
   const [timerStyle, setTimerStyle] = useState(getInitialTimerStyle);
+  const [soundEnabled, setSoundEnabled] = useState(getInitialSoundEnabled);
+  const [soundPreset, setSoundPreset] = useState(getInitialSoundPreset);
+  const [soundVolume, setSoundVolume] = useState(getInitialSoundVolume);
+  const [desktopNotificationsEnabled, setDesktopNotificationsEnabled] = useState(
+    getInitialDesktopNotifications
+  );
   const [minutes, setMinutes] = useState(workDuration);
   const [seconds, setSeconds] = useState(0);
   const [isActive, setIsActive] = useState(false);
@@ -84,6 +119,7 @@ const Pomodoro = () => {
             if (!isBreak) {
               // finished a focus session
               setSessionsCompleted((prev) => prev + 1);
+              notifyPhaseChange(false);
               if (breakTime > 0) {
                 startBreak();
               } else {
@@ -91,6 +127,7 @@ const Pomodoro = () => {
               }
             } else {
               // finished break, go back to focus
+              notifyPhaseChange(true);
               startWork();
             }
           } else {
@@ -127,6 +164,29 @@ const Pomodoro = () => {
     window.localStorage.setItem(STORAGE_KEYS.timerStyle, timerStyle);
   }, [timerStyle]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEYS.soundEnabled, String(soundEnabled));
+  }, [soundEnabled]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEYS.soundPreset, soundPreset);
+  }, [soundPreset]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEYS.soundVolume, String(soundVolume));
+  }, [soundVolume]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(
+      STORAGE_KEYS.desktopNotifications,
+      String(desktopNotificationsEnabled)
+    );
+  }, [desktopNotificationsEnabled]);
+
   const toggleTimer = () => {
     setIsActive((prev) => !prev);
   };
@@ -154,6 +214,86 @@ const Pomodoro = () => {
 
   const toggleDarkMode = () => {
     setDarkMode((prev) => !prev);
+  };
+
+  const playNotificationSound = (kind) => {
+    if (typeof window === 'undefined' || !soundEnabled) return;
+
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+
+    const ctx = new AudioCtx();
+    const gain = ctx.createGain();
+    gain.gain.value = soundVolume;
+    gain.connect(ctx.destination);
+
+    const now = ctx.currentTime;
+
+    const playTone = (freq, startOffset, duration) => {
+      const osc = ctx.createOscillator();
+      osc.type = soundPreset === 'digital' ? 'square' : 'sine';
+      osc.frequency.value = freq;
+      osc.connect(gain);
+      const startTime = now + startOffset;
+      const endTime = startTime + duration;
+      osc.start(startTime);
+      osc.stop(endTime);
+    };
+
+    if (soundPreset === 'bell') {
+      const base = kind === 'break' ? 600 : 880;
+      playTone(base, 0, 0.22);
+      playTone(base * 0.8, 0.24, 0.24);
+    } else if (soundPreset === 'digital') {
+      const base = kind === 'break' ? 900 : 1200;
+      playTone(base, 0, 0.12);
+      playTone(base, 0.18, 0.12);
+      playTone(base, 0.36, 0.12);
+    } else {
+      // chime
+      const base = kind === 'break' ? 660 : 520;
+      playTone(base, 0, 0.18);
+      playTone(base * 1.3, 0.2, 0.2);
+    }
+
+    // Close context after short delay to free resources
+    setTimeout(() => {
+      ctx.close();
+    }, 1000);
+  };
+
+  const sendDesktopNotification = (title, body) => {
+    if (typeof window === 'undefined' || !desktopNotificationsEnabled) return;
+    if (!('Notification' in window)) return;
+
+    const show = () => {
+      try {
+        // eslint-disable-next-line no-new
+        new Notification(title, { body });
+      } catch {
+        // ignore
+      }
+    };
+
+    if (Notification.permission === 'granted') {
+      show();
+    } else if (Notification.permission === 'default') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          show();
+        }
+      });
+    }
+  };
+
+  const notifyPhaseChange = (finishedBreak) => {
+    if (finishedBreak) {
+      playNotificationSound('focus');
+      sendDesktopNotification('Break finished', 'Time to focus again.');
+    } else {
+      playNotificationSound('break');
+      sendDesktopNotification('Focus session finished', 'Take a short break.');
+    }
   };
 
   const formattedMinutes = String(minutes).padStart(2, '0');
@@ -417,6 +557,92 @@ const Pomodoro = () => {
                     </button>
                   ))}
                 </div>
+              </section>
+
+              <section>
+                <p className="mb-2 font-medium text-neutral-400">Notification sound</p>
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
+                      soundEnabled
+                        ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
+                        : darkMode
+                        ? 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                        : 'bg-white border-neutral-200 text-neutral-500 hover:bg-neutral-50'
+                    }`}
+                  >
+                    {soundEnabled ? 'Sound: On' : 'Sound: Off'}
+                  </button>
+                  {[
+                    { id: 'chime', label: 'Soft chime' },
+                    { id: 'bell', label: 'Bell' },
+                    { id: 'digital', label: 'Digital' },
+                  ].map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSoundPreset(option.id)}
+                      className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
+                        soundPreset === option.id
+                          ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
+                          : darkMode
+                          ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+                          : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3 text-[11px] md:text-xs text-neutral-500">
+                  <span>Volume</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={soundVolume}
+                    onChange={(e) => setSoundVolume(parseFloat(e.target.value))}
+                    className="flex-1 accent-neutral-500"
+                  />
+                </div>
+              </section>
+
+              <section>
+                <p className="mb-2 font-medium text-neutral-400">Desktop notifications</p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDesktopNotificationsEnabled(true)}
+                    className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
+                      desktopNotificationsEnabled
+                        ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
+                        : darkMode
+                        ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+                        : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                    }`}
+                  >
+                    On
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDesktopNotificationsEnabled(false)}
+                    className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
+                      !desktopNotificationsEnabled
+                        ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
+                        : darkMode
+                        ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+                        : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                    }`}
+                  >
+                    Off
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] md:text-xs text-neutral-500">
+                  Your browser may ask for permission the first time notifications are enabled.
+                </p>
               </section>
             </div>
           </div>
