@@ -107,6 +107,13 @@ const getDataNoticeSeen = () => {
   return window.localStorage.getItem(STORAGE_KEYS.dataNoticeSeen) === 'true';
 };
 
+const isDesktopOrLaptop = () => {
+  if (typeof navigator === 'undefined') return false;
+  if (navigator.userAgentData?.mobile === false) return true;
+  const mobileRegex = /Mobi|Android|Tablet|iPad|iPhone|webOS|BlackBerry|IEMobile|Opera Mini/i;
+  return !mobileRegex.test(navigator.userAgent || '');
+};
+
 const Pomodoro = () => {
   const [darkMode, setDarkMode] = useState(getInitialTheme);
   const [workDuration, setWorkDuration] = useState(getInitialWorkDuration); // in minutes
@@ -314,24 +321,27 @@ const Pomodoro = () => {
 
   const sendDesktopNotification = (title, body) => {
     if (typeof window === 'undefined' || !desktopNotificationsEnabled) return;
+    if (!isDesktopOrLaptop()) return;
     if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
 
-    const show = () => {
-      try {
-        // eslint-disable-next-line no-new
-        new Notification(title, { body });
-      } catch {
-        // ignore
-      }
-    };
+    try {
+      // eslint-disable-next-line no-new
+      new Notification(title, { body });
+    } catch {
+      // ignore
+    }
+  };
 
+  const requestNotificationPermissionAndEnable = () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return;
     if (Notification.permission === 'granted') {
-      show();
-    } else if (Notification.permission === 'default') {
+      setDesktopNotificationsEnabled(true);
+      return;
+    }
+    if (Notification.permission === 'default') {
       Notification.requestPermission().then((permission) => {
-        if (permission === 'granted') {
-          show();
-        }
+        setDesktopNotificationsEnabled(permission === 'granted');
       });
     }
   };
@@ -705,40 +715,42 @@ const Pomodoro = () => {
                 </div>
               </section>
 
-              <section>
-                <p className="mb-2 font-medium text-neutral-400">Desktop notifications</p>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDesktopNotificationsEnabled(true)}
-                    className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
-                      desktopNotificationsEnabled
-                        ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
-                        : darkMode
-                        ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
-                        : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
-                    }`}
-                  >
-                    On
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDesktopNotificationsEnabled(false)}
-                    className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
-                      !desktopNotificationsEnabled
-                        ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
-                        : darkMode
-                        ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
-                        : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
-                    }`}
-                  >
-                    Off
-                  </button>
-                </div>
-                <p className="mt-1 text-[11px] md:text-xs text-neutral-500">
-                  Your browser may ask for permission the first time notifications are enabled.
-                </p>
-              </section>
+              {isDesktopOrLaptop() && (
+                <section>
+                  <p className="mb-2 font-medium text-neutral-400">Desktop notifications</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={requestNotificationPermissionAndEnable}
+                      className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
+                        desktopNotificationsEnabled
+                          ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
+                          : darkMode
+                          ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+                          : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      On
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDesktopNotificationsEnabled(false)}
+                      className={`rounded-full px-3.5 py-2.5 font-medium border text-xs md:text-sm transition-colors duration-200 ${
+                        !desktopNotificationsEnabled
+                          ? 'bg-neutral-100 text-neutral-900 border-neutral-300'
+                          : darkMode
+                          ? 'bg-neutral-900 border-neutral-700 text-neutral-200 hover:bg-neutral-800'
+                          : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      Off
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] md:text-xs text-neutral-500">
+                    Your browser will ask for permission the first time you turn this on.
+                  </p>
+                </section>
+              )}
 
               <section className="pt-2 border-t border-neutral-200 dark:border-neutral-700">
                 <p className="mb-2 font-medium text-neutral-400">Data</p>
