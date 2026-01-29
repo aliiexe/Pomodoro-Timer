@@ -18,6 +18,17 @@ const STORAGE_KEYS = {
   soundPreset: 'pomodoro_sound_preset',
   soundVolume: 'pomodoro_sound_volume',
   desktopNotifications: 'pomodoro_desktop_notifications',
+  sessionsCompleted: 'pomodoro_sessions_completed',
+  timerMinutes: 'pomodoro_timer_minutes',
+  timerSeconds: 'pomodoro_timer_seconds',
+  timerIsBreak: 'pomodoro_timer_is_break',
+  dataNoticeSeen: 'pomodoro_data_notice_seen',
+};
+
+const clearAllStoredData = () => {
+  if (typeof window === 'undefined') return;
+  Object.values(STORAGE_KEYS).forEach((key) => window.localStorage.removeItem(key));
+  window.location.reload();
 };
 
 const getInitialTheme = () => {
@@ -74,6 +85,28 @@ const getInitialDesktopNotifications = () => {
   return stored === 'true';
 };
 
+const getInitialSessionsCompleted = () => {
+  if (typeof window === 'undefined') return 0;
+  const value = parseInt(window.localStorage.getItem(STORAGE_KEYS.sessionsCompleted) || '', 10);
+  return Number.isFinite(value) && value >= 0 ? value : 0;
+};
+
+const getInitialTimerState = (workDuration, breakTime) => {
+  if (typeof window === 'undefined') return null;
+  const mins = parseInt(window.localStorage.getItem(STORAGE_KEYS.timerMinutes) || '', 10);
+  const secs = parseInt(window.localStorage.getItem(STORAGE_KEYS.timerSeconds) || '', 10);
+  const isBreak = window.localStorage.getItem(STORAGE_KEYS.timerIsBreak) === 'true';
+  if (!Number.isFinite(mins) || !Number.isFinite(secs)) return null;
+  const maxMin = isBreak ? breakTime : workDuration;
+  if (mins < 0 || mins > maxMin || secs < 0 || secs > 59) return null;
+  return { minutes: mins, seconds: secs, isBreak };
+};
+
+const getDataNoticeSeen = () => {
+  if (typeof window === 'undefined') return true;
+  return window.localStorage.getItem(STORAGE_KEYS.dataNoticeSeen) === 'true';
+};
+
 const Pomodoro = () => {
   const [darkMode, setDarkMode] = useState(getInitialTheme);
   const [workDuration, setWorkDuration] = useState(getInitialWorkDuration); // in minutes
@@ -85,12 +118,17 @@ const Pomodoro = () => {
   const [desktopNotificationsEnabled, setDesktopNotificationsEnabled] = useState(
     getInitialDesktopNotifications
   );
-  const [minutes, setMinutes] = useState(workDuration);
-  const [seconds, setSeconds] = useState(0);
+  const [sessionsCompleted, setSessionsCompleted] = useState(getInitialSessionsCompleted);
+
+  const savedTimer = getInitialTimerState(workDuration, breakTime);
+  const [minutes, setMinutes] = useState(
+    savedTimer ? savedTimer.minutes : workDuration
+  );
+  const [seconds, setSeconds] = useState(savedTimer ? savedTimer.seconds : 0);
   const [isActive, setIsActive] = useState(false);
-  const [isBreak, setIsBreak] = useState(false);
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const [isBreak, setIsBreak] = useState(savedTimer ? savedTimer.isBreak : false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showDataNotice, setShowDataNotice] = useState(() => !getDataNoticeSeen());
 
   useEffect(() => {
     let interval;
@@ -186,6 +224,18 @@ const Pomodoro = () => {
       String(desktopNotificationsEnabled)
     );
   }, [desktopNotificationsEnabled]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEYS.sessionsCompleted, String(sessionsCompleted));
+  }, [sessionsCompleted]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(STORAGE_KEYS.timerMinutes, String(minutes));
+    window.localStorage.setItem(STORAGE_KEYS.timerSeconds, String(seconds));
+    window.localStorage.setItem(STORAGE_KEYS.timerIsBreak, String(isBreak));
+  }, [minutes, seconds, isBreak]);
 
   const toggleTimer = () => {
     setIsActive((prev) => !prev);
@@ -449,6 +499,41 @@ const Pomodoro = () => {
         </main>
       </div>
 
+      {/* First-time data notice */}
+      {showDataNotice && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div
+            className={`w-full max-w-md rounded-2xl border shadow-xl px-5 py-5 ${
+              darkMode ? 'bg-neutral-900 border-neutral-700' : 'bg-white border-neutral-200'
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="data-notice-title"
+          >
+            <h2 id="data-notice-title" className="text-base font-semibold mb-3">
+              Your data stays on your device
+            </h2>
+            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-5 leading-relaxed">
+              Focus Ring does not use a server or database. Your settings, session count, and timer
+              state are saved only in this browser (local storage). Clearing site data or using
+              another device will not sync your data. You can reset everything from Settings.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.localStorage.setItem(STORAGE_KEYS.dataNoticeSeen, 'true');
+                }
+                setShowDataNotice(false);
+              }}
+              className="w-full rounded-full py-2.5 text-sm font-medium bg-neutral-800 text-white hover:bg-neutral-700 dark:bg-neutral-700 dark:hover:bg-neutral-600 transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Settings button */}
       <button
         type="button"
@@ -653,6 +738,25 @@ const Pomodoro = () => {
                 <p className="mt-1 text-[11px] md:text-xs text-neutral-500">
                   Your browser may ask for permission the first time notifications are enabled.
                 </p>
+              </section>
+
+              <section className="pt-2 border-t border-neutral-200 dark:border-neutral-700">
+                <p className="mb-2 font-medium text-neutral-400">Data</p>
+                <p className="mb-3 text-[11px] md:text-xs text-neutral-500">
+                  All data is stored in your browser only. Reset clears settings, session count, and
+                  timer state.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('Reset all data? This cannot be undone.')) {
+                      clearAllStoredData();
+                    }
+                  }}
+                  className="rounded-full px-4 py-2.5 text-sm font-medium border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/50 transition-colors"
+                >
+                  Reset all data
+                </button>
               </section>
             </div>
           </div>
