@@ -1,41 +1,55 @@
 # Pomodoro Timer
 
-A minimal Pomodoro timer built with React and Vite. Focus sessions and breaks are configurable; dark and light themes are supported.
+A clean, minimal Pomodoro timer for the browser. Set a focus length, take breaks, and let the timer cycle automatically. All preferences are saved locally.
 
-![Light theme](screenshots/pomodoro_light.png)
-![Dark theme](screenshots/pomodoro_dark.png)
-![Settings](screenshots/pomodoro_settings.png)
+| Light | Dark | Settings |
+|-------|------|----------|
+| ![Light theme](screenshots/pomodoro_light.png) | ![Dark theme](screenshots/pomodoro_dark.png) | ![Settings](screenshots/pomodoro_settings.png) |
 
 ## Features
 
-- **Focus & break intervals** — Set work length (15–60 min) and short/long break length (5–10 min).
-- **Loop mode** — Run repeated focus/break cycles.
-- **Dark / light theme** — Toggle in settings.
-- **Timer style** — Digital or circular progress.
-- **Notifications** — Optional sound and desktop notifications when a session ends.
+**Timer**
+- **Focus length** — 15, 25, or 50 minutes per session
+- **Break length** — 5, 10, or 15 minutes
+- **Auto cycle** — After focus → break; after break → next focus. No need to restart manually.
+- **Session count** — Tracks completed focus sessions
+
+**Customization**
+- **Theme** — Light or dark; defaults to your system preference
+- **Timer style** — Circle (with progress ring), Pill card, or Minimal
+- **Notification sound** — On/off, with Soft chime, Bell, or Digital presets and a volume slider
+- **Desktop notifications** — Optional browser notifications when a session or break ends
+
+**Persistence** — Theme, durations, timer style, and notification settings are stored in `localStorage` and restored on reload.
 
 ## Tech stack
 
-- React 18
-- Vite
-- Tailwind CSS
+- **React 18** — UI
+- **Vite** — Build and dev server
+- **Tailwind CSS** — Styling
+- **react-icons** — Icons
 
 ## Getting started
 
-```bash
-# Install dependencies
-npm install
+**Requirements:** Node.js 18+ and npm (or yarn/pnpm).
 
-# Run dev server
+```bash
+git clone <your-repo-url>
+cd Pomodoro-Timer
+npm install
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:5173](http://localhost:5173). The timer is ready to use.
 
-```bash
-# Build for production
-npm run build
-```
+**Other commands**
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server with HMR |
+| `npm run build` | Production build (output in `dist/`) |
+| `npm run preview` | Serve the production build locally |
+| `npm run lint` | Run ESLint |
 
 ## License
 
