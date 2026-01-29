@@ -463,11 +463,21 @@ const Pomodoro = () => {
         <MdSettings size={22} />
       </button>
 
+      {/* Attribution */}
+      <a
+        href="https://github.com/aliiexe"
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-6 left-6 text-xs md:text-sm text-neutral-500 hover:text-neutral-400 transition-colors"
+      >
+        made by @aliiexe
+      </a>
+
       {/* Settings modal */}
       {isSettingsOpen && (
-        <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-30 flex items-end md:items-center justify-center bg-black/40 backdrop-blur-sm px-3 pb-4 md:px-0 md:pb-0">
           <div
-            className={`w-full max-w-lg rounded-2xl border shadow-xl px-5 py-4 md:px-6 md:py-5 ${
+            className={`w-full max-w-lg rounded-2xl border shadow-xl px-5 py-4 md:px-6 md:py-5 max-h-[80vh] overflow-y-auto ${
               darkMode ? 'bg-neutral-900 border-neutral-700' : 'bg-white border-neutral-200'
             }`}
             role="dialog"
