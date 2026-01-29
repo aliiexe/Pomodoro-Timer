@@ -1,4 +1,4 @@
-# Pomodoro Timer
+# Focus Ring
 
 A clean, minimal Pomodoro timer for the browser. Set a focus length, take breaks, and let the timer cycle automatically. All preferences are saved locally.
 

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true">
+  <defs>
+    <linearGradient id="tomato" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e74c3c"/>
+      <stop offset="100%" stop-color="#c0392b"/>
+    </linearGradient>
+    <linearGradient id="highlight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff" stop-opacity=".35"/>
+      <stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="16" cy="17" rx="12" ry="11" fill="url(#tomato)"/>
+  <ellipse cx="16" cy="10" rx="4" ry="3" fill="url(#highlight)"/>
+  <path d="M14 6 L16 2 L18 6 L16 5.5 Z" fill="#27ae60"/>
+  <ellipse cx="16" cy="5.5" rx="1.5" ry=".8" fill="#2ecc71"/>
+</svg>

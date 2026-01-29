@@ -329,7 +329,7 @@ const Pomodoro = () => {
       >
         <header className="flex items-center justify-between px-6 pt-5 pb-3 md:px-8">
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Pomodoro Timer</h1>
+            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight">Focus Ring</h1>
             <p className="mt-1 text-xs md:text-sm text-neutral-400">
               Clean focus sessions with gentle breaks.
             </p>
