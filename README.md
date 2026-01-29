@@ -1,30 +1,42 @@
-# React Pomodoro Timer
+# Pomodoro Timer
 
-Welcome to the React Pomodoro Timer! This simple yet effective productivity tool helps you manage your time efficiently using the Pomodoro Technique. With the ability to customize work and rest intervals, and toggle between dark mode and minimalist light mode, this timer adapts to your preferences and workflow seamlessly.
+A minimal Pomodoro timer built with React and Vite. Focus sessions and breaks are configurable; dark and light themes are supported.
 
-![Screenshot 1](screenshots/pomodoro_light.png)
+![Light theme](screenshots/pomodoro_light.png)
+![Dark theme](screenshots/pomodoro_dark.png)
+![Settings](screenshots/pomodoro_settings.png)
 
 ## Features
 
-- **Customizable Intervals**: Tailor your work and rest sessions to fit your productivity needs. Choose between 5 and 10-minute breaks to optimize your workflow.
-  
-- **Loop Functionality**: Set up a loop of work and rest intervals to create a rhythm that suits your productivity style. Stay focused during work sessions and recharge effectively during breaks.
+- **Focus & break intervals** — Set work length (15–60 min) and short/long break length (5–10 min).
+- **Loop mode** — Run repeated focus/break cycles.
+- **Dark / light theme** — Toggle in settings.
+- **Timer style** — Digital or circular progress.
+- **Notifications** — Optional sound and desktop notifications when a session ends.
 
-- **Dark Mode**: Reduce eye strain and create a focused environment with the dark mode option. Perfect for late-night work sessions or when you prefer a sleek aesthetic.
+## Tech stack
 
-- **Minimalist Interface**: Enjoy a clutter-free user experience with a minimalist interface designed for simplicity and ease of use. Stay focused on your tasks without distractions.
+- React 18
+- Vite
+- Tailwind CSS
 
-![Screenshot 2](screenshots/pomodoro_dark.png)
+## Getting started
 
-## Getting Started
+```bash
+# Install dependencies
+npm install
 
-To get started with the React Pomodoro Timer, follow these simple steps:
+# Run dev server
+npm run dev
+```
 
-1. Clone the repository to your local machine.
-2. Install dependencies using `npm install` or `yarn install`.
-3. Run the app using `npm start` or `yarn start`.
-4. Customize your work and rest intervals and start boosting your productivity!
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-## Contributions
+```bash
+# Build for production
+npm run build
+```
 
-Contributions are welcome! If you have any ideas for improvements or new features, feel free to open an issue or submit a pull request. Let's make this Pomodoro Timer even better together.
+## License
+
+MIT

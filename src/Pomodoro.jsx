@@ -401,7 +401,7 @@ const Pomodoro = () => {
                   />
                 </svg>
               )}
-              <span className="text-5xl md:text-6xl font-mono tabular-nums tracking-tight">
+              <span className="text-5xl md:text-6xl font-semibold tabular-nums tracking-tight">
                 {formattedMinutes}:{formattedSeconds}
               </span>
               <span className="mt-2 text-xs md:text-sm text-neutral-400">
